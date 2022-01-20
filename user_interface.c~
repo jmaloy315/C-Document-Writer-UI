@@ -1,0 +1,344 @@
+/*Jack Maloy, 116329200*/ 
+	 
+#include <stdio.h> 
+#include <string.h> 
+#include <sysexits.h> 
+#include <stdlib.h> 
+#include <ctype.h> 
+#include "document.h"
+
+static int save_document_ui(Document *doc, char *input);
+
+/*runs add_paragraph_after in the ui. It makes sure the
+function fall is correct with the oorrect parameters*/
+int add_paragraph_after_ui(Document *doc, char *input){ 
+  int paragraph_number, check; 
+  char function[MAX_STR_SIZE+1], additional[MAX_STR_SIZE+1]; 
+  
+  check = sscanf(input, "%s%d%s", function, &paragraph_number, additional); 
+  
+  if(check!=2 || paragraph_number<0){ 
+    printf("Invalid Command\n"); 
+  }else{ 
+    if(add_paragraph_after(doc, paragraph_number)==FAILURE){ 
+      printf("add_paragraph_after failed\n"); 
+    } 
+    return SUCCESS; 
+  } 
+  return FAILURE; 
+} 
+
+int add_line_after_ui(Document *doc, char *input){ 
+  char function[MAX_STR_SIZE+1], line[MAX_STR_SIZE+1], temp[MAX_STR_SIZE+1]; 
+  int check, paragraph_number, line_number; 
+  
+  check = sscanf(input, "%s%d%d%s", function, &paragraph_number, &line_number, 
+		 temp); 
+  
+  if(check!=4 || paragraph_number<=0 || line_number<0){ 
+    printf("Invalid Command\n"); 
+  }else{ 
+    if(strchr(input, '*') !=NULL){ 
+      strcpy(line, strchr(input, '*')+1); 
+      if(add_line_after(doc, paragraph_number, line_number, line)==FAILURE){ 
+	printf("add_line_after failed\n"); 
+      } 
+    } 
+    return SUCCESS; 
+  } 
+  return FAILURE; 
+} 
+
+int print_document_ui(Document *doc, char *input){ 
+  char function[MAX_STR_SIZE+1], excess[MAX_STR_SIZE+1]; 
+  int check; 
+  
+  check = sscanf(input, "%s%s", function, excess); 
+  if(check != 1){ 
+    printf("Invalid command\n"); 
+  }else{ 
+    if(print_document(doc)==FAILURE){ 
+      printf("print_document failed\n"); 
+    } 
+    return SUCCESS; 
+  } 
+  return FAILURE; 
+} 
+
+int append_line_ui(Document *doc, char *input){ 
+  char function[MAX_STR_SIZE+1], line[MAX_STR_SIZE+1], temp[MAX_STR_SIZE+1]; 
+  int check, paragraph_number; 
+  
+  check = sscanf(input, "%s%d%s", function, &paragraph_number, temp); 
+  if(check!=3 || paragraph_number<=0){ 
+    printf("Invalid command\n"); 
+  }else{ 
+    if(strchr(input, '*') !=NULL){ 
+      strcpy(line, strchr(input, '*')+1); 
+      if(append_line(doc, paragraph_number, line)==FAILURE){ 
+	printf("add_line_after failed\n"); 
+      } 
+    } 
+    return SUCCESS; 
+  } 
+  return FAILURE; 
+} 
+
+int remove_line_ui(Document *doc, char *input){ 
+  char function[MAX_STR_SIZE+1], excess[MAX_STR_SIZE+1]; 
+  int paragraph_number, line_number, check; 
+  
+  check = sscanf(input, "%s%d%d%s", function, &paragraph_number, &line_number, 
+		 excess); 
+  
+  if(check!=3 || paragraph_number<=0 || line_number<=0){ 
+    printf("Invalid command\n"); 
+  }else{ 
+    if(remove_line(doc, paragraph_number, line_number)==FAILURE){ 
+      printf("remove_line failed\n"); 
+    } 
+  } 
+  return FAILURE; 
+} 
+
+int load_file_ui(Document *doc, char *input){ 
+  char filename[MAX_STR_SIZE+1], excess[MAX_STR_SIZE+1], 
+    function[MAX_STR_SIZE+1]; 
+  int check; 
+  
+  check = sscanf(input, "%s%s%s", function, filename, excess); 
+  
+  if(check!=2){ 
+    printf("Invalid command\n"); 
+  }else{ 
+    if(load_file(doc, filename)==FAILURE){ 
+      printf("load_file failed\n"); 
+    } 
+    return SUCCESS; 
+  } 
+  return FAILURE; 
+} 
+
+int replace_text_ui(Document *doc, char *input){ 
+  char function[MAX_STR_SIZE+1], target[MAX_STR_SIZE+1], 
+    replacement[MAX_STR_SIZE+1]; 
+  char temp_target[MAX_STR_SIZE+1], temp_replacement[MAX_STR_SIZE+1]; 
+  char *first, *second, *third, *fourth;
+  int check=0; 
+  
+  check = sscanf(input, "%s%s%s", function, temp_target, temp_replacement); 
+  
+  if(check!=3){ 
+    printf("Invalid command\n"); 
+  }else{ 
+    first = strstr(input, "\"");
+    if(first!=NULL){
+      second = strstr(first+1, "\"");
+    }
+    if(second!=NULL){
+      third = strstr(second+1, "\"");
+    }
+    if(third!=NULL){
+      fourth = strstr(third+1, "\"");
+    }
+    
+    strncpy(target, first+1, second-first);
+    target[second-(first+1)] = '\0';
+    strncpy(replacement, third+1, fourth-third);
+    replacement[fourth-(third+1)] = '\0';
+    
+    if(replace_text(doc, target, replacement)==FAILURE){ 
+      printf("replace_text failed\n"); 
+    } 
+    return SUCCESS; 
+  } 
+  return FAILURE; 
+} 
+
+int highlight_text_ui(Document *doc, char *input){ 
+  char function[MAX_STR_SIZE+1], target[MAX_STR_SIZE+1], temp[MAX_STR_SIZE+1]; 
+  int check; 
+  char *first, *second;
+  check = sscanf(input, "%s%s", function, temp); 
+  
+  if(check != 2){ 
+    printf("Invalid command\n"); 
+  }else{ 
+    first = strstr(input, "\"");
+    if(first!=NULL){
+      second = strstr(first+1, "\"");
+    }
+    strncpy(target, first+1, second-first);
+    target[second-(first+1)] = '\0';
+    if(highlight_text(doc, target)==FAILURE){ 
+      printf("highlight_text failed\n"); 
+    } 
+    return SUCCESS; 
+  } 
+  return FAILURE; 
+} 
+
+int remove_text_ui(Document *doc, char *input){ 
+  char function[MAX_STR_SIZE+1], target[MAX_STR_SIZE+1], temp[MAX_STR_SIZE+1]; 
+  int check; 
+  char *first, *second;
+  check = sscanf(input, "%s%s", function, temp); 
+  
+  if(check != 2){ 
+    printf("Invalid command\n"); 
+  }else{ 
+    
+    first = strstr(input, "\"");
+    if(first!=NULL){
+      second = strstr(first+1, "\"");
+    }
+    strncpy(target, first+1, second-first);
+    target[second-(first+1)] = '\0';
+    
+    if(remove_text(doc, target)==FAILURE){ 
+      printf("highlight_text failed\n"); 
+    } 
+    return SUCCESS; 
+  } 
+  return FAILURE; 
+} 
+
+static int save_document_ui(Document *doc, char *input){ 
+  char function[MAX_STR_SIZE+1], filename[MAX_STR_SIZE+1]; 
+  int check; 
+  
+  check = sscanf(input, "%s%s", function, filename); 
+  
+  if(check != 2){ 
+    printf("Invalid command\n"); 
+  }else{ 
+    if(save_document(doc, filename) == FAILURE){ 
+      printf("save_document failed\n"); 
+    } 
+    return SUCCESS; 
+  } 
+  return FAILURE; 
+} 
+
+int reset_document_ui(Document *doc, char *input){ 
+  char function[MAX_STR_SIZE+1], excess[MAX_STR_SIZE+1]; 
+  int check; 
+  
+  check = sscanf(input, "%s%s", function, excess); 
+  
+  if(check != 1){ 
+    printf("Invalid command"); 
+  }else{ 
+    if(reset_document(doc)==FAILURE){ 
+      printf("reset_document failed\n"); 
+    } 
+    return SUCCESS; 
+  } 
+  return FAILURE; 
+} 
+
+static int function_name_check(Document *doc, char *input){ 
+  
+  if(strstr(input, "add_paragraph_after") != NULL){ 
+    if(add_paragraph_after_ui(doc, input)==SUCCESS){ 
+      return SUCCESS; 
+    } 
+  }else if(strstr(input, "add_line_after") != NULL){ 
+    if(add_line_after_ui(doc, input)==SUCCESS){ 
+      return SUCCESS; 
+    } 
+  }else if(strstr(input, "print_document") != NULL){ 
+    if(print_document_ui(doc, input)==SUCCESS){ 
+      return SUCCESS; 
+    } 
+  }else if(strstr(input, "append_line") != NULL){ 
+    if(append_line_ui(doc, input)==SUCCESS){ 
+      return SUCCESS; 
+    } 
+  }else if(strstr(input, "remove_line") != NULL){ 
+    if(remove_line_ui(doc, input)==SUCCESS){ 
+      return SUCCESS; 
+    } 
+  }else if(strstr(input, "load_file") != NULL){ 
+    if(load_file_ui(doc, input)==SUCCESS){ 
+      return SUCCESS; 
+    } 
+  }else if(strstr(input, "replace_text") != NULL){ 
+    if(replace_text_ui(doc, input)==SUCCESS){ 
+      return SUCCESS; 
+    } 
+  }else if(strstr(input, "highlight_text") != NULL){ 
+    if(highlight_text_ui(doc, input)==SUCCESS){ 
+      return SUCCESS; 
+    } 
+  }else if(strstr(input, "remove_text") != NULL){ 
+    if(remove_text_ui(doc, input)==SUCCESS){ 
+      return SUCCESS; 
+    } 
+  }else if(strstr(input, "save_document") != NULL){ 
+    if(save_document_ui(doc, input)==SUCCESS){ 
+      return SUCCESS; 
+    } 
+  }else if(strstr(input, "reset_document") != NULL){ 
+    if(reset_document_ui(doc, input)==SUCCESS){ 
+      return SUCCESS; 
+    } 
+  } 
+  return FAILURE; 
+} 
+
+int main(int argc, char *argv[]) { 
+  FILE *input; 
+  char line[MAX_STR_SIZE+1], temp[MAX_STR_SIZE+1], comment = NULL; 
+  const char *start, *name = "main_document"; 
+  Document doc; 
+  int check; 
+  size_t length;
+  
+  init_document(&doc, name); 
+  
+  if(argc==1){ 
+    input = stdin; 
+    printf("> "); 
+    
+    fgets(line, MAX_STR_SIZE+1, stdin); 
+    start = line; 
+    
+    while((strcmp(line, "quit\n")!=0)&&(strcmp(line, "exit\n")!=0)){ 
+      length = strlen(line)-1;
+      if(line[length]=='\n'){
+	    line[length] = '\0';
+	  }
+      if((strcmp(start, "#")!=0) || (strcmp(line, "\n")!=0)){ 
+	function_name_check(&doc, line);
+      } 
+      printf("> "); 
+      fgets(line, MAX_STR_SIZE+1, stdin); 
+    } 
+  }else if(argc == 2){ 
+    input = fopen(argv[1], "r"); 
+    if(input == NULL){ 
+      fprintf(stderr, "%s cannot be opened.\n", argv[1]); 
+      exit(EX_OSERR); 
+    }else{ 
+      while(fgets(line, MAX_STR_SIZE+1, input)){ 
+	length = strlen(line)-1;
+	if((strcmp(line, "quit\n")!=0) && (strcmp(line, "exit\n")!=0)){ 
+	  check = sscanf(line, " %c%s", &comment, temp); 
+	  if(line[length]=='\n'){
+	    line[length] = '\0';
+	  }
+	  if(check>0 && comment != '#'){ 
+	    function_name_check(&doc, line); 
+	  } 
+	} 
+      } 
+    } 
+  }else{ 
+    fprintf(stderr, "Usage: user_interface\n"); 
+    fprintf(stderr, "Usage: user_interface <filename>\n"); 
+    exit(EX_USAGE); 
+  } 
+  fclose(input); 
+  exit(EXIT_SUCCESS); 
+} 
